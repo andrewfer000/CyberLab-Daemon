@@ -585,11 +585,14 @@ def rsession():
 @app.route('/probesession')
 def prsession():
     session_id = request.args.get('session_id')
-    session_file = os.path.join(f"sessions/{session_id}", "session.json")
-    with open(session_file, 'r') as file:
-        session = json.load(file)
+    try:
+        session_file = os.path.join(f"sessions/{session_id}", "session.json")
+        with open(session_file, 'r') as file:
+            session = json.load(file)
 
-    status = session[session_id]["Metadata"]["Ready"]
+        status = session[session_id]["Metadata"]["Ready"]
+    except:
+        status = 'false'
     data = {
         'session_id' : session_id,
         'message' : f"session has been probed",
@@ -601,4 +604,4 @@ def prsession():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

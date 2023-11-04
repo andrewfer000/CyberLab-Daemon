@@ -148,6 +148,7 @@ if __name__ == "__main__":
     if args.newsession:
         print("Building your session. Please wait")
         session_id = newsessiontest(args.newsession)
+        print(f"Session ID: {session_id}")
     elif args.buildsession:
         print(f"Building Session For {args.buildsession}")
         buildsessiontest(args.buildsession)
