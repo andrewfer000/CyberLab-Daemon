@@ -12,3 +12,9 @@ Simialr to the concept version, You need to create a Virtual Environment and ins
 2. `cyberlab_cli.py` is the command line tool. It works similar to the concept version of the software. You can run this on any host as long as it can reach the API (server running in app.py).
 3. If you have a course with a lab ready, then you can run `cyberlab_cli.py --demosession testcourse/testlab` This command will send the API requests to create a new session, build the session (VM, Networks, Guac Config), and then build the lab. It will then generate the HTML page to access the lab. Please note all URLs generated will be based on the daemon's config.json so if you're using a remote device with a reverse proxy please reflect that in your config.json
 4. When you're done. Run `cyberlab_cli.py --destorysession 'session_id'` to end destory the guacamole user, connections, VM(s), VM Disk(s), and VM network(s).
+
+
+## Screenshots
+
+Sneek peek of when the Frontend and backend work toghether. CyberLab Simulator being accessed on a Smartphone!
+![image](https://github.com/andrewfer000/CyberLab-Daemon/assets/9620913/fe556fd3-2a85-427c-9d06-b84a2e08334a)
