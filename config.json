@@ -5,8 +5,8 @@
                 "Security": "http",
                 "URL": "localhost:8080/guacamole",
                 "AuthRequired": true,
-                "AdminUsername": "admin",
-                "AdminPassword": "pass"
+                "AdminUsername": "AdminUsername",
+                "AdminPassword": "AdminPassword"
             },
             "Libvirt": {
                 "Security": "none",
@@ -16,5 +16,11 @@
                 "AdminPassword": "libvirt_password"
             }
         }
+    },
+    "daemon": {
+        "name":"testdaemon",
+        "connecton_key": "TbpkJRa15FIxFbeuq9yH7p59of4PYhxE",
+        "listenip":"localhost",
+        "listenport":"5000"
     }
 }

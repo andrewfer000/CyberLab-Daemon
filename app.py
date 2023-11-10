@@ -1,4 +1,4 @@
-import json, random, string, os, argparse, shutil
+import json, random, string, os, argparse, shutil, psutil
 from jinja2 import Environment, FileSystemLoader, Template
 from datetime import datetime
 from functions.libvirt_automated import *
@@ -511,97 +511,214 @@ def getvars():
 
     return GUAC_SECURITY, GUACAMOLE_URL, GUAC_FULL_URL, GUACAMOLE_API_URL, GUACAMOLE_ADMIN_UNAME, GUACAMOLE_ADMIN_PASS, LIBVIRT_SECURITY, LIBVIRT_URL
 
-@app.route('/newsession')
+def getdaemonvars():
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+
+    CONNECTION_KEY = config['daemon']['connecton_key']
+    LISTENIP = config['daemon']['listenip']
+    LISTENPORT = config['daemon']['listenport']
+    file.close
+
+    return CONNECTION_KEY, LISTENIP, LISTENPORT
+@app.route('/newsession', methods=['POST'])
 def cnewsession():
-    labtorun = request.args.get('labtorun')
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    labtorun = inputdata.get('labtorun', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
     culab = labtorun.split('/')
     coursename = culab[0]
     labname = culab[1]
-    session_id = CreateSession(coursename, labname)
-    data = {
-        'session_id' : session_id,
-        'action_id' : 0
-        }
-    return jsonify(data)
+    if CONNECTION_KEY == input_connecton_key:
+        session_id = CreateSession(coursename, labname)
+        data = {
+            'session_id' : session_id,
+            'action_id' : 0
+            }
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
 
-@app.route('/buildsession')
+@app.route('/buildsession', methods=['POST'])
 def busession():
-    session_id = request.args.get('session_id')
-    session_id = startLab(session_id)
-    data = {
-        'session_id' : session_id,
-        'action_id' : 1
-        }
-    return jsonify(data)
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        session_id = startLab(session_id)
+        data = {
+            'session_id' : session_id,
+            'action_id' : 1
+            }
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
 
-@app.route('/renderlab')
+@app.route('/renderlab', methods=['POST'])
 def renderLab():
-    session_id = request.args.get('session_id')
-    renderedlab =  RenderLabPage(session_id)
-    data = {
-        'session_id' : session_id,
-        'message' : f"Lab has been rendered",
-        'renderedlab' : renderedlab,
-        'action_id' : 2
-        }
-    return jsonify(data)
-
-@app.route('/destorysession')
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        renderedlab =  RenderLabPage(session_id)
+        data = {
+            'session_id' : session_id,
+            'message' : f"Lab has been rendered",
+            'renderedlab' : renderedlab,
+            'action_id' : 2
+            }
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
+@app.route('/destorysession', methods=['POST'])
 def dsession():
-    session_id = request.args.get('session_id')
-    DestorySession(session_id)
-    data = {
-        'session_id' : session_id,
-        'message' : f"session has been destoryed",
-        'action_id' : 3
-        }
-    return jsonify(data)
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        DestorySession(session_id)
+        data = {
+            'session_id' : session_id,
+            'message' : f"session has been destoryed",
+            'action_id' : 3
+            }
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
 
-
-@app.route('/pausesession')
+@app.route('/pausesession', methods=['POST'])
 def psession():
-    session_id = request.args.get('session_id')
-    PauseSession(session_id)
-    data = {
-        'session_id' : session_id,
-        'message' : f"session has been paused",
-        'action_id' : 4
-        }
-    return jsonify(data)
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        PauseSession(session_id)
+        data = {
+            'session_id' : session_id,
+            'message' : f"session has been paused",
+            'action_id' : 4
+            }
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
 
-
-@app.route('/resumesession')
+@app.route('/resumesession', methods=['POST'])
 def rsession():
-    session_id = request.args.get('session_id')
-    renderedlab = ResumeSession(session_id)
-    data = {
-        'session_id' : session_id,
-        'message' : f"session has been resumed",
-        'renderedlab' : renderedlab,
-        'action_id' : 5
-        }
-    return jsonify(data)
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        renderedlab = ResumeSession(session_id)
+        data = {
+            'session_id' : session_id,
+            'message' : f"session has been resumed",
+            'renderedlab' : renderedlab,
+            'action_id' : 5
+            }
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
 
-@app.route('/probesession')
+@app.route('/probesession', methods=['POST'])
 def prsession():
-    session_id = request.args.get('session_id')
-    try:
-        session_file = os.path.join(f"sessions/{session_id}", "session.json")
-        with open(session_file, 'r') as file:
-            session = json.load(file)
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        try:
+            session_file = os.path.join(f"sessions/{session_id}", "session.json")
+            with open(session_file, 'r') as file:
+                session = json.load(file)
 
-        status = session[session_id]["Metadata"]["Ready"]
-    except:
-        status = 'false'
-    data = {
-        'session_id' : session_id,
-        'message' : f"session has been probed",
-        'status' : status,
-        'action_id' : 9
+            status = session[session_id]["Metadata"]["Ready"]
+        except:
+            status = 'false'
+        data = {
+            'session_id' : session_id,
+            'message' : f"session has been probed",
+            'status' : status,
+            'action_id' : 9
+            }
+        file.close()
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
+
+@app.route('/installedlabs', methods=['POST'])
+def installedlabs():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        try:
+            courses_file = os.path.join(f"courses", "courses.json")
+            with open(courses_file, 'r') as file:
+                data = json.load(file)
+
+            available_labs = []
+            available_disks = []
+            for course_name, course_details in data["Courses"].items():
+                cname = f"{course_name}"
+                cdisc = f"{course_details['Description']}"
+
+                for image_number, image_info in course_details["DiskImages"].items():
+                    diskdata = [image_number, image_info[0], image_info[1]]
+                    available_disks.append(diskdata)
+
+                for lab_number, lab_info in course_details["Labs"].items():
+                    labformat = f"{course_name.lower()}/{lab_info[0].lower()}"
+                    lab = [lab_number, lab_info[0], lab_info[1], labformat]
+                    available_labs.append(lab)
+
+            resdata = {
+                'CourseName': cname,
+                'CourseDesription': cdisc,
+                'available_disks': available_disks,
+                'available_labs': available_labs
+                }
+
+        except:
+            resdata = {
+                'Error': 'Courses File does not exist! Check this node'
+                }
+        file.close()
+        return jsonify(resdata)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
+
+@app.route('/serverstats', methods=['POST'])
+def serverstats():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+
+    if CONNECTION_KEY == input_connecton_key:
+        directory_path = "sessions"
+        entries = os.listdir(directory_path)
+        session_count = sum(os.path.isdir(os.path.join(directory_path, entry)) for entry in entries) - 1
+
+        ram = psutil.virtual_memory()
+        cpu = psutil.cpu_percent(percpu=True)
+        data = {
+        'cpusutil' : f"{round(sum(cpu) / len(cpu), 2)}",
+        'cpucores' : f"{cpu}",
+        'totalram' : f"{ram.total / (1024 ** 3):.2f}",
+        'availram' : f"{ram.available / (1024 ** 3):.2f}",
+        'useram' : f"Used RAM: {ram.used / (1024 ** 3):.2f}",
+        'rampercent' : f"RAM Usage Percentage: {ram.percent:.2f}",
+        'session_count': session_count
         }
-    file.close()
-    return jsonify(data)
-
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"})
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    print("Using gunicorn")
+    #app.run(debug=False, host=LISTENIP, port=LISTENPORT)

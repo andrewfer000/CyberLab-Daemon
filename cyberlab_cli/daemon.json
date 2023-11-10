@@ -1,0 +1,7 @@
+{
+    "daemon" : {
+        "api_url": "http://localhost:5000",
+        "connecton_key": "TbpkJRa15FIxFbeuq9yH7p59of4PYhxE"
+    }
+
+}
