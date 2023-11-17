@@ -14,7 +14,4 @@ Simialr to the concept version, You need to create a Virtual Environment and ins
 4. When you're done. Run `cyberlab_cli.py --destorysession 'session_id'` to end destory the guacamole user, connections, VM(s), VM Disk(s), and VM network(s).
 
 
-## Screenshots
-
-Sneek peek of when the Frontend and backend work toghether. CyberLab Simulator being accessed on a Smartphone!
-![image](https://github.com/andrewfer000/CyberLab-Daemon/assets/9620913/fe556fd3-2a85-427c-9d06-b84a2e08334a)
+https://github.com/andrewfer000/CyberLab
