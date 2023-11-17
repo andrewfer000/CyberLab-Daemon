@@ -1,17 +1,90 @@
 import requests, argparse, json
 
-def getdaemonvars():
+
+def selectdaemontest(labtorun):
+    with open('daemon.json', 'r') as file:
+        daemonsfile = json.load(file)
+
+    daemons = daemonsfile['daemons']
+    daemonlist = []
+    for daemonname, daemon in daemons.items():
+        api_url = daemon['api_url']
+        connecton_key = daemon['connecton_key']
+
+        labavailable = False
+        cutilization = -1
+        mutilization = -1
+
+        base_url = f"{api_url}/installedlabs"
+        data = {
+            'connecton_key': connecton_key
+        }
+        try:
+            response = requests.post(base_url, json=data)
+            if response.status_code == 200:
+                data = response.json()  # For JSON response
+
+                lablist = []
+                for coursename in data:
+                    for item in data[coursename]["available_labs"]:
+                        lablist.append(item[3])
+            else:
+                print(f'Request failed with status code: {response.status_code}')
+
+        except requests.RequestException as e:
+            print(f'Request encountered an error: {e}')
+
+        if labtorun in lablist:
+            labavailable = True
+        else:
+            pass
+
+        if labavailable == True:
+            base_url = f"{api_url}/serverstats"
+            # Define query parameters as a dictionary
+            data = {
+                'connecton_key': connecton_key
+            }
+            try:
+                response = requests.post(base_url, json=data)
+                if response.status_code == 200:
+                    data = response.json()
+                    mutilization = data['rampercent']
+                    cutilization = data['cpupercent']
+
+                    daemoninfo = [daemonname, mutilization, cutilization]
+                    daemonlist.append(daemoninfo)
+
+                else:
+                    print(f'Request failed with status code: {response.status_code}')
+
+            except requests.RequestException as e:
+                print(f'Request encountered an error: {e}')
+        else:
+            pass
+
+    print(f"Daemons with '{labtorun}' installed: {daemonlist}")
+    if len(daemonlist) > 1:
+        print("daemon list larger than 1. Selecting Server with lowest load")
+        # Logic to select lowest load server goes here
+    else:
+       print(f"The daemon you should use is: {daemonlist[0][0]}")
+
+
+
+
+def getdaemonvars(daemonname="Default"):
     with open('daemon.json', 'r') as file:
         daemon = json.load(file)
 
-    API_URL = daemon['daemon']['api_url']
-    CONNECTON_KEY = daemon['daemon']['connecton_key']
+    API_URL = daemon['daemons'][daemonname]['api_url']
+    CONNECTON_KEY = daemon['daemons'][daemonname]['connecton_key']
     file.close
 
     return API_URL, CONNECTON_KEY
 
-def newsessiontest(labtorun):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def newsessiontest(labtorun, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/newsession"
     timeout = 300
 
@@ -34,8 +107,8 @@ def newsessiontest(labtorun):
 
     return text_value
 
-def buildsessiontest(session_id):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def buildsessiontest(session_id, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/buildsession"
     # Define query parameters as a dictionary
     data = {
@@ -52,8 +125,8 @@ def buildsessiontest(session_id):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def pausesessiontest(session_id):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def pausesessiontest(session_id, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/pausesession"
     # Define query parameters as a dictionary
     data = {
@@ -70,8 +143,8 @@ def pausesessiontest(session_id):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def destorysessiontest(session_id):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def destorysessiontest(session_id, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/destorysession"
 
     # Define query parameters as a dictionary
@@ -89,8 +162,8 @@ def destorysessiontest(session_id):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def resumesessiontest(session_id):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def resumesessiontest(session_id, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/resumesession"
 
     # Define query parameters as a dictionary
@@ -112,8 +185,8 @@ def resumesessiontest(session_id):
     with open(f'{session_id}_labpage.html', 'w') as outfile:
         outfile.write(text_value)
 
-def renderlabtest(session_id):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def renderlabtest(session_id, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/renderlab"
 
     # Define query parameters as a dictionary
@@ -136,8 +209,8 @@ def renderlabtest(session_id):
         outfile.write(text_value)
 
 
-def probesessiontest(session_id):
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def probesessiontest(session_id, daemonname="Default"):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/probesession"
 
     # Define query parameters as a dictionary
@@ -155,8 +228,8 @@ def probesessiontest(session_id):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def installedlabtests():
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def installedlabtests(daemonname):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/installedlabs"
     data = {
         'connecton_key': CONNECTON_KEY
@@ -165,15 +238,21 @@ def installedlabtests():
         response = requests.post(base_url, json=data)
         if response.status_code == 200:
             data = response.json()  # For JSON response
-            print(json.dumps(data, indent=4, sort_keys=True))
+            print(json.dumps(data, indent=4, sort_keys=False))
+
+            lablist = []
+            for coursename in data:
+                for item in data[coursename]["available_labs"]:
+                    lablist.append(item[3])
+            print(f" \nRaw Lab List: {lablist}")
         else:
             print(f'Request failed with status code: {response.status_code}')
 
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def daemonchecktest():
-    API_URL, CONNECTON_KEY = getdaemonvars()
+def daemonchecktest(daemonname):
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/serverstats"
 
     # Define query parameters as a dictionary
@@ -202,8 +281,9 @@ if __name__ == "__main__":
     parser.add_argument("--resumesession", action="store", help="--resumesession [session-id] will resume VMs and add guacamole permissions to the session user")
     parser.add_argument("--probesession", action="store", help="--probesession [session-id] will check to see if a lab session is ready to go")
     parser.add_argument("--renderlab", action="store", help="--renderlab [session-id] will render the lab page for a given session")
-    parser.add_argument("--listlabs", action="store_true", help="--listlabs will return a list of labs you can run")
-    parser.add_argument("--daemoninfo", action="store_true", help="--daemoninfo will let you know the stats of a daemon")
+    parser.add_argument("--listlabs", action="store", help="--listlabs [daemon] will return a list of labs you can run on a daemon")
+    parser.add_argument("--daemoninfo", action="store", help="--daemoninfo [daemon] will let you know the stats of a daemon")
+    parser.add_argument("--selectdaemon", action="store", help="--selectdaemon [course/lab] selects the optimal daemon for a lab session")
     args = parser.parse_args()
 
     if args.newsession:
@@ -235,9 +315,11 @@ if __name__ == "__main__":
         buildsessiontest(session_id)
         print(f"SessionID: {session_id} has been built")
         renderlabtest(session_id)
+    elif args.selectdaemon:
+        selectdaemontest(args.selectdaemon)
     elif args.listlabs:
-        installedlabtests()
+        installedlabtests(args.listlabs)
     elif args.daemoninfo:
-        daemonchecktest()
+        daemonchecktest(args.daemoninfo)
     else:
         print("Invaild Option")

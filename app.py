@@ -84,7 +84,7 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
                     vm_mac = generate_random_mac()
                     nic_model = network[0]
                     vm_network_name = network[1]
-                    if net_machine_name == machine_name:
+                    if net_machine_name == machine_name and network_name == vm_network_name:
                         machinemac = {machine_name: vm_mac}
                         machinemacs.append(machinemac)
                     if net_machine_name == machine_name and network_name == vm_network_name:
@@ -95,6 +95,7 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
                         machineips.append(machineip)
                 else:
                     pass
+
 
         ip_addr = replace_ip_pattern(base_ip, network_info.get("HostAddr"))
         sub_mask = network_info.get("Subnet")
@@ -137,7 +138,6 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
             }
 
         WriteSessionData("network", network_data, session_id)
-
 
     for machine_name, details in machines.items():
 
@@ -227,6 +227,7 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
             for name, mac in machinemac.items():
                 if name == machine_name:
                     machine_data_macs.append(mac)
+
 
         for network in details.get("Network", []):
             vm_mac = machine_data_macs[netcount]
@@ -538,7 +539,7 @@ def cnewsession():
             }
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/buildsession', methods=['POST'])
 def busession():
@@ -554,7 +555,7 @@ def busession():
             }
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/renderlab', methods=['POST'])
 def renderLab():
@@ -572,7 +573,7 @@ def renderLab():
             }
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 @app.route('/destorysession', methods=['POST'])
 def dsession():
     inputdata = request.get_json()
@@ -588,7 +589,7 @@ def dsession():
             }
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/pausesession', methods=['POST'])
 def psession():
@@ -605,7 +606,7 @@ def psession():
             }
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/resumesession', methods=['POST'])
 def rsession():
@@ -649,7 +650,7 @@ def prsession():
         file.close()
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/installedlabs', methods=['POST'])
 def installedlabs():
@@ -678,7 +679,6 @@ def installedlabs():
                     available_labs.append(lab)
 
             resdata = {
-                'CourseName': cname,
                 'CourseDesription': cdisc,
                 'available_disks': available_disks,
                 'available_labs': available_labs
@@ -689,9 +689,9 @@ def installedlabs():
                 'Error': 'Courses File does not exist! Check this node'
                 }
         file.close()
-        return jsonify(resdata)
+        return jsonify({cname : resdata})
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/serverstats', methods=['POST'])
 def serverstats():
@@ -707,17 +707,17 @@ def serverstats():
         ram = psutil.virtual_memory()
         cpu = psutil.cpu_percent(percpu=True)
         data = {
-        'cpusutil' : f"{round(sum(cpu) / len(cpu), 2)}",
-        'cpucores' : f"{cpu}",
+        'cpupercent' : f"{round(sum(cpu) / len(cpu), 2)}",
+        'cpucorespercent' : f"{cpu}",
         'totalram' : f"{ram.total / (1024 ** 3):.2f}",
         'availram' : f"{ram.available / (1024 ** 3):.2f}",
-        'useram' : f"Used RAM: {ram.used / (1024 ** 3):.2f}",
-        'rampercent' : f"RAM Usage Percentage: {ram.percent:.2f}",
+        'useram' : f"{ram.used / (1024 ** 3):.2f}",
+        'rampercent' : f"{ram.percent:.2f}",
         'session_count': session_count
         }
         return jsonify(data)
     else:
-        return jsonify({"Error" : "Backend Key Incorrect"})
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 if __name__ == '__main__':
     print("Using gunicorn")
