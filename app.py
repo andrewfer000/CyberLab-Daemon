@@ -8,8 +8,35 @@ from functions.xml_generator import *
 from functions.get_client_urls import get_client_url
 from functions.generate_lab import GenerateLab
 from flask import Flask, render_template, request, jsonify
+from checkers.InitateCheckers import *
 
 app = Flask(__name__)
+def getvars():
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+
+    GUAC_SECURITY = config['connections']['Local']['Guacamole']['Security']
+    GUACAMOLE_URL = config['connections']['Local']['Guacamole']['URL']
+    GUAC_FULL_URL = f"{GUAC_SECURITY}://{GUACAMOLE_URL}"
+    GUACAMOLE_API_URL = f"{GUAC_FULL_URL}/api"
+    GUACAMOLE_ADMIN_UNAME = config['connections']['Local']['Guacamole']['AdminUsername']
+    GUACAMOLE_ADMIN_PASS = config['connections']['Local']['Guacamole']['AdminPassword']
+    LIBVIRT_SECURITY = config['connections']['Local']['Libvirt']['Security']
+    LIBVIRT_URL = config['connections']['Local']['Libvirt']['URL']
+    file.close()
+
+    return GUAC_SECURITY, GUACAMOLE_URL, GUAC_FULL_URL, GUACAMOLE_API_URL, GUACAMOLE_ADMIN_UNAME, GUACAMOLE_ADMIN_PASS, LIBVIRT_SECURITY, LIBVIRT_URL
+
+def getdaemonvars():
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+
+    CONNECTION_KEY = config['daemon']['connecton_key']
+    LISTENIP = config['daemon']['listenip']
+    LISTENPORT = config['daemon']['listenport']
+    file.close
+
+    return CONNECTION_KEY, LISTENIP, LISTENPORT
 
 def CreateSession(course, lab):
     GUAC_SECURITY, GUACAMOLE_URL, GUAC_FULL_URL, GUACAMOLE_API_URL, GUACAMOLE_ADMIN_UNAME, GUACAMOLE_ADMIN_PASS, LIBVIRT_SECURITY, LIBVIRT_URL = getvars()
@@ -60,6 +87,45 @@ def generate_vnc_ports(machines):
 
     return vm_vnc_ports
 
+def writecheckers(session_id):
+
+    session_dir = os.path.join(f"sessions", f"{session_id}")
+    session_file = os.path.join(f"sessions/{session_id}", "session.json")
+
+    try:
+        with open(session_file, 'r') as file:
+            session = json.load(file)
+    except FileNotFoundError:
+        print(f"Session {session_id} not found. Are you sure that is correct?")
+        return None
+
+    culab = session[session_id]["Metadata"]["CourseLab"].split('/')
+    coursename = culab[0]
+    labname = culab[1]
+    course_dir = f"courses/{coursename}"
+    lab_to_run = f"{course_dir}/labs/{labname}.json"
+
+    file.close()
+
+    with open(lab_to_run, 'r') as file:
+        lab = json.load(file)
+
+    checkers = lab[labname]["Checkers"]
+
+
+    for checker_name, checker_info in checkers.items():
+        checker_data = {
+        "Checker_id" : checker_name,
+        "Checker_Type" : checker_info['Checker_Type'],
+        "Checker_Task" : checker_info['Checker_Task'],
+        "Machine" : checker_info['Machine'],
+        "Checker_Condition" : checker_info['Checker_Condition'],
+        "Grade_Value" : checker_info['Grade_Value'],
+        "RunAfterLab" : checker_info['RunAfterLab']
+        }
+
+        WriteSessionData("checker", checker_data, session_id)
+    file.close()
 
 # This Function creates tcomponethe VM envirtonment for the lab.
 def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
@@ -304,8 +370,6 @@ def ConfigureGuac(vm_vnc_ports, session_id):
 
     return guac_data
 
-
-
 def PauseSession(session_id):
     GUAC_SECURITY, GUACAMOLE_URL, GUAC_FULL_URL, GUACAMOLE_API_URL, GUACAMOLE_ADMIN_UNAME, GUACAMOLE_ADMIN_PASS, LIBVIRT_SECURITY, LIBVIRT_URL = getvars()
     guac_admin_auth_token = generate_authToken(GUACAMOLE_ADMIN_UNAME, GUACAMOLE_ADMIN_PASS, GUACAMOLE_API_URL)
@@ -361,7 +425,7 @@ def ResumeSession(session_id):
     with open(lab_to_run, 'r') as file:
         lab = json.load(file)
 
-    instructions = lab["TestLab"]["Instructions"]
+    instructions = lab[labname]["Instructions"]
     file.close()
 
     networks = session[session_id]["Networkinfo"]
@@ -451,13 +515,15 @@ def startLab(session_id):
     with open(lab_to_run, 'r') as file:
         lab = json.load(file)
 
-    machines = lab["TestLab"]["Machines"]
-    networks = lab["TestLab"]["Networks"]
-    instructions = lab["TestLab"]["Instructions"]
+    machines = lab[labname]["Machines"]
+    networks = lab[labname]["Networks"]
+    instructions = lab[labname]["Instructions"]
 
+    writecheckers(session_id)
     vm_vnc_ports = generate_vnc_ports(machines)
     guac_data = ConfigureGuac(vm_vnc_ports, session_id)
     CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir)
+    writecheckers(session_id)
     WriteSessionData("metadata", {"Ready":"True"}, session_id)
     file.close()
 
@@ -490,38 +556,12 @@ def RenderLabPage(session_id):
     with open(lab_to_run, 'r') as file:
         lab = json.load(file)
 
-    instructions = lab["TestLab"]["Instructions"]
+    instructions = lab[labname]["Instructions"]
     file.close()
 
     renderedlab = GenerateLab(GUAC_FULL_URL, guac_data, session_id, instructions, 0)
     return renderedlab
 
-def getvars():
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-
-    GUAC_SECURITY = config['connections']['Local']['Guacamole']['Security']
-    GUACAMOLE_URL = config['connections']['Local']['Guacamole']['URL']
-    GUAC_FULL_URL = f"{GUAC_SECURITY}://{GUACAMOLE_URL}"
-    GUACAMOLE_API_URL = f"{GUAC_FULL_URL}/api"
-    GUACAMOLE_ADMIN_UNAME = config['connections']['Local']['Guacamole']['AdminUsername']
-    GUACAMOLE_ADMIN_PASS = config['connections']['Local']['Guacamole']['AdminPassword']
-    LIBVIRT_SECURITY = config['connections']['Local']['Libvirt']['Security']
-    LIBVIRT_URL = config['connections']['Local']['Libvirt']['URL']
-    file.close()
-
-    return GUAC_SECURITY, GUACAMOLE_URL, GUAC_FULL_URL, GUACAMOLE_API_URL, GUACAMOLE_ADMIN_UNAME, GUACAMOLE_ADMIN_PASS, LIBVIRT_SECURITY, LIBVIRT_URL
-
-def getdaemonvars():
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-
-    CONNECTION_KEY = config['daemon']['connecton_key']
-    LISTENIP = config['daemon']['listenip']
-    LISTENPORT = config['daemon']['listenport']
-    file.close
-
-    return CONNECTION_KEY, LISTENIP, LISTENPORT
 @app.route('/newsession', methods=['POST'])
 def cnewsession():
     inputdata = request.get_json()
@@ -718,6 +758,49 @@ def serverstats():
         return jsonify(data)
     else:
         return jsonify({"Error" : "Backend Key Incorrect"}), 401
+
+@app.route('/runchecker', methods=['POST'])
+def runchecker():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    checker_id = inputdata.get('checker_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        try:
+            session_file = os.path.join(f"sessions/{session_id}", "session.json")
+            with open(session_file, 'r') as file:
+                session = json.load(file)
+
+            checkertype = session[session_id]["Checkers"][checker_id]["Checker_Type"]
+            checkertask = session[session_id]["Checkers"][checker_id]["Checker_Task"]
+            checkercondition = session[session_id]["Checkers"][checker_id]["Checker_Condition"]
+            gradevalue = session[session_id]["Checkers"][checker_id]["Grade_Value"]
+            submited = session[session_id]["Checkers"][checker_id]["Submitted"]
+            machine = session[session_id]["Checkers"][checker_id]["Machine"]
+
+            answer = runchecker(checkertype, checkertask, checkercondition, machineip)
+
+            if answer == True:
+                gradevalue = 1
+            elif answer == False:
+                gradevalue = 0
+
+        except:
+            return jsonify({"Error" : "An Error has Occured"}), 401
+
+
+        data = {
+            'session_id' : session_id,
+            'message' : f"session has been probed",
+            'status' : status,
+            'action_id' : 9
+            }
+        file.close()
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
+
 
 if __name__ == '__main__':
     print("Using gunicorn")

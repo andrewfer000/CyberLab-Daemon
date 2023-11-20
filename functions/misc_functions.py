@@ -64,20 +64,29 @@ def WriteSessionData(componet, indata, session_id):
 
         }
 
-    elif componet == "Checker":
+    elif componet == "checker":
         data[session_id]['Checkers'][indata.get("Checker_id")] = {
             "Checker_Type": indata.get("Checker_Type"),
             "Checker_Task": indata.get("Checker_Task"),
+            "Machine": indata.get("Machine"),
             "Checker_Condition": indata.get("Checker_Condition"),
             "Grade_Value": indata.get("Grade_Value"),
-            "Submitted": "null"
+            "RunAfterLab": indata.get("RunAfterLab"),
+            "Submitted": "False",
+            "Correct": "False"
         }
+
+    elif componet == "CheckerUpdate":
+        data[session_id]['Checkers'][indata.get("Checker_id")]["Grade_Value"] = indata.get("Grade_Value")
+        data[session_id]['Checkers'][indata.get("Checker_id")]["Submitted"] = "True"
+
     elif componet == "metadata":
         data[session_id]['Metadata']['Ready'] = indata.get("Ready")
 
     else:
         print(f"ERROR: Componet: {componet} Does not Exist!")
 
-    # Write the updated data back to data.json
+    file.close()
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=4)
+    file.close()

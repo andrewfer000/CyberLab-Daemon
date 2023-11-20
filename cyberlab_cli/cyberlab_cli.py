@@ -1,5 +1,31 @@
-import requests, argparse, json
+import requests, argparse, json, os
 
+def recordsession(daemonname, sessionid):
+    file_path = os.path.join(f"daemontracker.json")
+
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    file.close()
+
+    data[sessionid] = daemonname
+
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
+    file.close()
+
+def getdaemonname(session_id):
+    file_path = os.path.join(f"daemontracker.json")
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    daemonname = ""
+    for key, value in data.items():
+        if key == session_id:
+            daemonname = value
+        else:
+            pass
+    file.close()
+    return daemonname
 
 def selectdaemontest(labtorun):
     with open('daemon.json', 'r') as file:
@@ -22,7 +48,7 @@ def selectdaemontest(labtorun):
         try:
             response = requests.post(base_url, json=data)
             if response.status_code == 200:
-                data = response.json()  # For JSON response
+                data = response.json()
 
                 lablist = []
                 for coursename in data:
@@ -41,7 +67,6 @@ def selectdaemontest(labtorun):
 
         if labavailable == True:
             base_url = f"{api_url}/serverstats"
-            # Define query parameters as a dictionary
             data = {
                 'connecton_key': connecton_key
             }
@@ -69,9 +94,7 @@ def selectdaemontest(labtorun):
         # Logic to select lowest load server goes here
     else:
        print(f"The daemon you should use is: {daemonlist[0][0]}")
-
-
-
+       return daemonlist[0][0]
 
 def getdaemonvars(daemonname="Default"):
     with open('daemon.json', 'r') as file:
@@ -83,12 +106,12 @@ def getdaemonvars(daemonname="Default"):
 
     return API_URL, CONNECTON_KEY
 
-def newsessiontest(labtorun, daemonname="Default"):
+def newsessiontest(labtorun):
+    daemonname = selectdaemontest(labtorun)
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/newsession"
     timeout = 300
 
-    # Define query parameters as a dictionary
     data = {
         'labtorun': labtorun,
         'connecton_key': CONNECTON_KEY
@@ -105,12 +128,13 @@ def newsessiontest(labtorun, daemonname="Default"):
         print(f'Request encountered an error: {e}')
         text_value = ""
 
-    return text_value
+    recordsession(daemonname, text_value)
+    return text_value, daemonname
 
-def buildsessiontest(session_id, daemonname="Default"):
+def buildsessiontest(session_id):
+    daemonname = getdaemonname(session_id)
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/buildsession"
-    # Define query parameters as a dictionary
     data = {
         'session_id': session_id,
         'connecton_key': CONNECTON_KEY
@@ -128,7 +152,6 @@ def buildsessiontest(session_id, daemonname="Default"):
 def pausesessiontest(session_id, daemonname="Default"):
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/pausesession"
-    # Define query parameters as a dictionary
     data = {
         'session_id': session_id,
         'connecton_key': CONNECTON_KEY
@@ -143,11 +166,11 @@ def pausesessiontest(session_id, daemonname="Default"):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def destorysessiontest(session_id, daemonname="Default"):
+def destorysessiontest(session_id):
+    daemonname = getdaemonname(session_id)
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/destorysession"
 
-    # Define query parameters as a dictionary
     data = {
         'session_id': session_id,
         'connecton_key': CONNECTON_KEY
@@ -162,11 +185,11 @@ def destorysessiontest(session_id, daemonname="Default"):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
-def resumesessiontest(session_id, daemonname="Default"):
+def resumesessiontest(session_id):
+    daemonname = getdaemonname(session_id)
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/resumesession"
 
-    # Define query parameters as a dictionary
     data = {
         'session_id': session_id,
         'connecton_key': CONNECTON_KEY
@@ -185,11 +208,11 @@ def resumesessiontest(session_id, daemonname="Default"):
     with open(f'{session_id}_labpage.html', 'w') as outfile:
         outfile.write(text_value)
 
-def renderlabtest(session_id, daemonname="Default"):
+def renderlabtest(session_id):
+    daemonname = getdaemonname(session_id)
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/renderlab"
 
-    # Define query parameters as a dictionary
     data = {
         'session_id': session_id,
         'connecton_key': CONNECTON_KEY
@@ -209,11 +232,11 @@ def renderlabtest(session_id, daemonname="Default"):
         outfile.write(text_value)
 
 
-def probesessiontest(session_id, daemonname="Default"):
+def probesessiontest(session_id):
+    daemonname = getdaemonname(session_id)
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/probesession"
 
-    # Define query parameters as a dictionary
     data = {
         'session_id': session_id,
         'connecton_key': CONNECTON_KEY
@@ -252,10 +275,10 @@ def installedlabtests(daemonname):
         print(f'Request encountered an error: {e}')
 
 def daemonchecktest(daemonname):
+
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/serverstats"
 
-    # Define query parameters as a dictionary
     data = {
         'connecton_key': CONNECTON_KEY
     }
@@ -269,7 +292,6 @@ def daemonchecktest(daemonname):
 
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CyberLab Backend API CLI Program")
@@ -310,7 +332,7 @@ if __name__ == "__main__":
         probesessiontest(args.probesession)
     elif args.demosession:
         print(f"Building Session For {args.demosession}")
-        session_id = newsessiontest(args.demosession)
+        session_id, daemonname = newsessiontest(args.demosession)
         print(f"SessionID: {session_id} has been created")
         buildsessiontest(session_id)
         print(f"SessionID: {session_id} has been built")
