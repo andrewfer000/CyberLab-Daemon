@@ -76,8 +76,9 @@ def selectdaemontest(labtorun):
                     data = response.json()
                     mutilization = data['rampercent']
                     cutilization = data['cpupercent']
+                    sessioncount = data['session_count']
 
-                    daemoninfo = [daemonname, mutilization, cutilization]
+                    daemoninfo = [daemonname, mutilization, cutilization, sessioncount]
                     daemonlist.append(daemoninfo)
 
                 else:
@@ -293,6 +294,24 @@ def daemonchecktest(daemonname):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
+def checksessiontest(session_id):
+    daemonname = getdaemonname(session_id)
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
+    base_url = f"{API_URL}/runchecker"
+    data = {
+        'session_id': session_id,
+        'connecton_key': CONNECTON_KEY
+    }
+    try:
+        response = requests.post(base_url, json=data)
+        if response.status_code == 200:
+            print(response.json())  # For JSON response
+        else:
+            print(f'Request failed with status code: {response.status_code}')
+
+    except requests.RequestException as e:
+        print(f'Request encountered an error: {e}')
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CyberLab Backend API CLI Program")
     parser.add_argument("--demosession", action="store", help="Creates a new session, Builds the session, renders the lab")
@@ -303,6 +322,7 @@ if __name__ == "__main__":
     parser.add_argument("--resumesession", action="store", help="--resumesession [session-id] will resume VMs and add guacamole permissions to the session user")
     parser.add_argument("--probesession", action="store", help="--probesession [session-id] will check to see if a lab session is ready to go")
     parser.add_argument("--renderlab", action="store", help="--renderlab [session-id] will render the lab page for a given session")
+    parser.add_argument("--runchecker", action="store", help="--runchecker [session-id] will run the checkers for a session")
     parser.add_argument("--listlabs", action="store", help="--listlabs [daemon] will return a list of labs you can run on a daemon")
     parser.add_argument("--daemoninfo", action="store", help="--daemoninfo [daemon] will let you know the stats of a daemon")
     parser.add_argument("--selectdaemon", action="store", help="--selectdaemon [course/lab] selects the optimal daemon for a lab session")
@@ -330,6 +350,9 @@ if __name__ == "__main__":
     elif args.probesession:
         print(f"Probeing Session {args.probesession}")
         probesessiontest(args.probesession)
+    elif args.runchecker:
+        print(f"Running Checkers on Session {args.runchecker}")
+        checksessiontest(args.runchecker)
     elif args.demosession:
         print(f"Building Session For {args.demosession}")
         session_id, daemonname = newsessiontest(args.demosession)

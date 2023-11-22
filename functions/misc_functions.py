@@ -61,13 +61,13 @@ def WriteSessionData(componet, indata, session_id):
             "Multiple_Choice_Options": indata.get("Multiple_Choice_Options"),
             "Answer": indata.get("Answer"),
             "Submitted": "null"
-
         }
 
     elif componet == "checker":
-        data[session_id]['Checkers'][indata.get("Checker_id")] = {
+        data[session_id]['Checkers'][f'{indata.get("Checker_id")}_{session_id}'] = {
             "Checker_Type": indata.get("Checker_Type"),
             "Checker_Task": indata.get("Checker_Task"),
+            "Options": indata.get("Options"),
             "Machine": indata.get("Machine"),
             "Checker_Condition": indata.get("Checker_Condition"),
             "Grade_Value": indata.get("Grade_Value"),
@@ -76,9 +76,9 @@ def WriteSessionData(componet, indata, session_id):
             "Correct": "False"
         }
 
-    elif componet == "CheckerUpdate":
-        data[session_id]['Checkers'][indata.get("Checker_id")]["Grade_Value"] = indata.get("Grade_Value")
-        data[session_id]['Checkers'][indata.get("Checker_id")]["Submitted"] = "True"
+    elif componet == "checkerupdate":
+        data[session_id]['Checkers'][indata.get("Checker_id")]["Correct"] = indata.get("Correct")
+        data[session_id]['Checkers'][indata.get("Checker_id")]["Submitted"] = indata.get("Submitted")
 
     elif componet == "metadata":
         data[session_id]['Metadata']['Ready'] = indata.get("Ready")

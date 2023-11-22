@@ -118,6 +118,7 @@ def writecheckers(session_id):
         "Checker_id" : checker_name,
         "Checker_Type" : checker_info['Checker_Type'],
         "Checker_Task" : checker_info['Checker_Task'],
+        "Options" : checker_info['Options'],
         "Machine" : checker_info['Machine'],
         "Checker_Condition" : checker_info['Checker_Condition'],
         "Grade_Value" : checker_info['Grade_Value'],
@@ -760,7 +761,7 @@ def serverstats():
         return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
 @app.route('/runchecker', methods=['POST'])
-def runchecker():
+def runcheckerfunction():
     inputdata = request.get_json()
     input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
     session_id = inputdata.get('session_id', 'NOTPROVIDED')
@@ -772,35 +773,55 @@ def runchecker():
             with open(session_file, 'r') as file:
                 session = json.load(file)
 
-            checkertype = session[session_id]["Checkers"][checker_id]["Checker_Type"]
-            checkertask = session[session_id]["Checkers"][checker_id]["Checker_Task"]
-            checkercondition = session[session_id]["Checkers"][checker_id]["Checker_Condition"]
-            gradevalue = session[session_id]["Checkers"][checker_id]["Grade_Value"]
-            submited = session[session_id]["Checkers"][checker_id]["Submitted"]
-            machine = session[session_id]["Checkers"][checker_id]["Machine"]
+            if checker_id == 'NOTPROVIDED':
+                checkers_list = []
+                print("Checker ID Not provided. Running through all lab checkers")
 
-            answer = runchecker(checkertype, checkertask, checkercondition, machineip)
+                for chkname in session[session_id]["Checkers"]:
+                    checkers_list.append(chkname)
+            else:
+                checkers_list = [checker_id]
 
-            if answer == True:
-                gradevalue = 1
-            elif answer == False:
-                gradevalue = 0
+            answers = {}
+            for checker in checkers_list:
+                checkertype = session[session_id]["Checkers"][checker]["Checker_Type"]
+                checkertask = session[session_id]["Checkers"][checker]["Checker_Task"]
+                checkercondition = session[session_id]["Checkers"][checker]["Checker_Condition"]
+                gradevalue = session[session_id]["Checkers"][checker]["Grade_Value"]
+                submited = session[session_id]["Checkers"][checker]["Submitted"]
+                machine = session[session_id]["Checkers"][checker]["Machine"]
+                options = session[session_id]["Checkers"][checker]["Options"]
 
-        except:
-            return jsonify({"Error" : "An Error has Occured"}), 401
+                machines = session[session_id]["VMinfo"]
+                machine_names = list(machines.keys())
+                for machine_name in machine_names:
+                    if machine_name == f"{machine}_{session_id}":
+                        machineip = session[session_id]["VMinfo"][f"{machine}_{session_id}"]["machine_data_ips"][0]
+                        answer = runchecker(checkertype, checkertask, checkercondition, machineip, options)
+                        print(answer)
+                        checker_update_data= {
+                            "Checker_id": checker,
+                            "Correct": answer,
+                            "Submitted": True
+                        }
+                        WriteSessionData("checkerupdate", checker_update_data, session_id)
 
+                    else:
+                        pass
+        except Exception as e:
+            print({e})
+            return jsonify({"Error" : f"An Error has Occured {e}"}), 401
 
         data = {
             'session_id' : session_id,
-            'message' : f"session has been probed",
-            'status' : status,
-            'action_id' : 9
+            'message' : f"Checkers have been run. Please check the session file",
+            'action_id' : 11
             }
+
         file.close()
         return jsonify(data)
     else:
         return jsonify({"Error" : "Backend Key Incorrect"}), 401
-
 
 if __name__ == '__main__':
     print("Using gunicorn")
