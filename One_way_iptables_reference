@@ -1,0 +1,13 @@
+# THIS IS PUSDOCODE! NOT A REAL SCRIPT
+
+vm_net_interface = virbr8505
+vm_net_ip = 10.151.220.1
+vm_net_cidr = 28
+
+# LAB STARTUP
+sudo iptables -A INPUT -i {{vm_net_interface}} -s {{vm_net_ip}}/{{vm_net_cidr}} -p tcp --dport 22 -j DROP
+sudo iptables -A INPUT -i {{vm_net_interface}} -s {{vm_net_ip}}/{{vm_net_cidr}} -p icmp --icmp-type 8 -j DROP
+
+# LAB SHUTDOWN
+sudo iptables -D INPUT -i {{vm_net_interface}} -s {{vm_net_ip}}/{{vm_net_cidr}} -p tcp --dport 22 -j DROP
+sudo iptables -D INPUT -i {{vm_net_interface}} -s {{vm_net_ip}}/{{vm_net_cidr}} -p icmp --icmp-type 8 -j DROP
