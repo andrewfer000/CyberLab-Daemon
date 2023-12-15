@@ -3,7 +3,8 @@
         "Rules": {
             "TimeLimit": "3600",
             "AllowPause": "True",
-            "AllowExtend": "False"
+            "AllowExtend": "False",
+            "TotalPoints": 100
         },
         "Machines": {
             "Machine1": {
@@ -78,7 +79,7 @@
                 "Checker_Condition": "online",
                 "Options" : [],
                 "Machine": "Machine1",
-                "Grade_Value": "1",
+                "Grade_Value": "20",
                 "RunAfterLab": "true"
             },
             "Checker2": {
@@ -87,7 +88,7 @@
                 "Checker_Condition": "offline",
                 "Options" : [],
                 "Machine": "Machine2",
-                "Grade_Value": "1",
+                "Grade_Value": "10",
                 "RunAfterLab": "true"
             },
             "Checker3": {
@@ -96,8 +97,22 @@
                 "Checker_Condition": "online",
                 "Options" : [80, 2],
                 "Machine": "Machine1",
-                "Grade_Value": "1",
+                "Grade_Value": "30",
                 "RunAfterLab": "true"
+            }
+        },
+        "Graders" : {
+            "Grader1" : {
+                "Checker_id": "Checker1",
+                "Point_value": 20
+            },
+            "Grader2" : {
+                "Checker_id": "Checker2",
+                "Point_value": 10
+            },
+            "Grader3" : {
+                "Checker_id": "Checker3",
+                "Point_value": 30
             }
         }
     }
