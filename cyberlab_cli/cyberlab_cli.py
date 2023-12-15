@@ -101,14 +101,24 @@ def getdaemonvars(daemonname="Default"):
     with open('daemon.json', 'r') as file:
         daemon = json.load(file)
 
-    API_URL = daemon['daemons'][daemonname]['api_url']
-    CONNECTON_KEY = daemon['daemons'][daemonname]['connecton_key']
+    try:
+        API_URL = daemon['daemons'][daemonname]['api_url']
+        CONNECTON_KEY = daemon['daemons'][daemonname]['connecton_key']
+    except:
+        print("ERROR: Daemon not found: Please ensure the daemon you selected is configured!")
+        API_URL = "NOTPROVIDED"
+        CONNECTON_KEY = "NOTPROVIDED"
     file.close
 
     return API_URL, CONNECTON_KEY
 
-def newsessiontest(labtorun):
-    daemonname = selectdaemontest(labtorun)
+def newsessiontest(labtorun, daemontouse):
+
+    if daemontouse == "auto":
+        daemonname = selectdaemontest(labtorun)
+    else:
+        daemonname = daemontouse
+
     API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
     base_url = f"{API_URL}/newsession"
     timeout = 300
@@ -312,10 +322,30 @@ def checksessiontest(session_id):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
+def gradesessiontest(session_id):
+    daemonname = getdaemonname(session_id)
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
+    base_url = f"{API_URL}/rungrader"
+    data = {
+        'session_id': session_id,
+        'connecton_key': CONNECTON_KEY
+    }
+    try:
+        response = requests.post(base_url, json=data)
+        if response.status_code == 200:
+            data = response.json()
+            print(json.dumps(data, indent=4, sort_keys=True))
+        else:
+            print(f'Request failed with status code: {response.status_code}')
+
+    except requests.RequestException as e:
+        print(f'Request encountered an error: {e}')
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CyberLab Backend API CLI Program")
-    parser.add_argument("--demosession", action="store", help="Creates a new session, Builds the session, renders the lab")
-    parser.add_argument("--newsession", action="store", help="Creates a new session")
+    parser.add_argument("--demosession", action="store", help="--demosession [course/lab] Selects a daemon, Creates a new session, Builds the session, renders the lab")
+    parser.add_argument("--shutsession", action="store", help="--shutsession [session_id] will check, grade, and destory the session")
+    parser.add_argument("--newsession", action="store", help="Selects a daemon and Creates a new session")
     parser.add_argument("--buildsession", action="store", help="--buildsesion [session-id] will build the session for the given session_id")
     parser.add_argument("--destorysession", action="store", help="--destorysession [session-id] will stop and delete the VMs, Guacamole connections/users and files for the session")
     parser.add_argument("--pausesession", action="store", help="--pausesession [session-id] will stop VMs and revoke guacamole permissions until session is resumed")
@@ -323,6 +353,7 @@ if __name__ == "__main__":
     parser.add_argument("--probesession", action="store", help="--probesession [session-id] will check to see if a lab session is ready to go")
     parser.add_argument("--renderlab", action="store", help="--renderlab [session-id] will render the lab page for a given session")
     parser.add_argument("--runchecker", action="store", help="--runchecker [session-id] will run the checkers for a session")
+    parser.add_argument("--rungrader", action="store", help="--rungrader [session-id] will run the graders for a session and output the results")
     parser.add_argument("--listlabs", action="store", help="--listlabs [daemon] will return a list of labs you can run on a daemon")
     parser.add_argument("--daemoninfo", action="store", help="--daemoninfo [daemon] will let you know the stats of a daemon")
     parser.add_argument("--selectdaemon", action="store", help="--selectdaemon [course/lab] selects the optimal daemon for a lab session")
@@ -330,7 +361,7 @@ if __name__ == "__main__":
 
     if args.newsession:
         print("Building your session. Please wait")
-        session_id = newsessiontest(args.newsession)
+        session_id = newsessiontest(args.newsession, "auto")
         print(f"Session ID: {session_id}")
     elif args.buildsession:
         print(f"Building Session For {args.buildsession}")
@@ -353,18 +384,27 @@ if __name__ == "__main__":
     elif args.runchecker:
         print(f"Running Checkers on Session {args.runchecker}")
         checksessiontest(args.runchecker)
-    elif args.demosession:
-        print(f"Building Session For {args.demosession}")
-        session_id, daemonname = newsessiontest(args.demosession)
-        print(f"SessionID: {session_id} has been created")
-        buildsessiontest(session_id)
-        print(f"SessionID: {session_id} has been built")
-        renderlabtest(session_id)
+    elif args.rungrader:
+        print(f"Running Graders on Session {args.rungrader}")
+        gradesessiontest(args.rungrader)
     elif args.selectdaemon:
         selectdaemontest(args.selectdaemon)
     elif args.listlabs:
         installedlabtests(args.listlabs)
     elif args.daemoninfo:
         daemonchecktest(args.daemoninfo)
+    elif args.demosession:
+        print(f"Building Session For {args.demosession}")
+        session_id, daemonname = newsessiontest(args.demosession, "auto")
+        buildsessiontest(session_id)
+        renderlabtest(session_id)
+        print(f"SessionID: {session_id} has been built and rendered")
+    elif args.shutsession:
+        print(f"Checking, Grading, and Destorying {args.shutsession}")
+        checksessiontest(args.shutsession)
+        gradesessiontest(args.shutsession)
+        print("")
+        destorysessiontest(args.shutsession)
+        print(f"SessionID: {args.shutsession} has been graded and destoryed")
     else:
         print("Invaild Option")

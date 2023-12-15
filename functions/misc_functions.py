@@ -75,6 +75,12 @@ def WriteSessionData(componet, indata, session_id):
             "Submitted": "False",
             "Correct": "False"
         }
+    elif componet == "grader":
+        data[session_id]['Graders'][f'{indata.get("Grader_id")}_{session_id}'] = {
+            "Checker_id": indata.get("Checker_id"),
+            "Point_value": indata.get("Point_value")
+
+        }
 
     elif componet == "checkerupdate":
         data[session_id]['Checkers'][indata.get("Checker_id")]["Correct"] = indata.get("Correct")

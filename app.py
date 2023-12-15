@@ -68,6 +68,8 @@ def CreateSession(course, lab):
             "Questions":{
                 },
             "Checkers":{
+                },
+            "Graders":{
                 }
             }
         }
@@ -111,7 +113,7 @@ def writecheckers(session_id):
         lab = json.load(file)
 
     checkers = lab[labname]["Checkers"]
-
+    graders = lab[labname]["Graders"]
 
     for checker_name, checker_info in checkers.items():
         checker_data = {
@@ -126,6 +128,14 @@ def writecheckers(session_id):
         }
 
         WriteSessionData("checker", checker_data, session_id)
+
+    for grader_name, grader_info in graders.items():
+        graders_data = {
+        "Grader_id" : grader_name,
+        "Checker_id" : grader_info['Checker_id'],
+        "Point_value" : grader_info['Point_value']
+        }
+        WriteSessionData("grader", graders_data, session_id)
     file.close()
 
 # This Function creates tcomponethe VM envirtonment for the lab.
@@ -778,6 +788,7 @@ def runcheckerfunction():
                 print("Checker ID Not provided. Running through all lab checkers")
 
                 for chkname in session[session_id]["Checkers"]:
+                    print(chkname)
                     checkers_list.append(chkname)
             else:
                 checkers_list = [checker_id]
@@ -798,14 +809,12 @@ def runcheckerfunction():
                     if machine_name == f"{machine}_{session_id}":
                         machineip = session[session_id]["VMinfo"][f"{machine}_{session_id}"]["machine_data_ips"][0]
                         answer = runchecker(checkertype, checkertask, checkercondition, machineip, options)
-                        print(answer)
                         checker_update_data= {
                             "Checker_id": checker,
                             "Correct": answer,
                             "Submitted": True
                         }
                         WriteSessionData("checkerupdate", checker_update_data, session_id)
-
                     else:
                         pass
         except Exception as e:
@@ -817,6 +826,72 @@ def runcheckerfunction():
             'message' : f"Checkers have been run. Please check the session file",
             'action_id' : 11
             }
+
+        file.close()
+        return jsonify(data)
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
+
+
+@app.route('/rungrader', methods=['POST'])
+def rungradersfunction():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    grader_id = inputdata.get('grader_id', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        try:
+            session_file = os.path.join(f"sessions/{session_id}", "session.json")
+            with open(session_file, 'r') as file:
+                session = json.load(file)
+
+            if grader_id == 'NOTPROVIDED':
+                graders_list = []
+                print("Grader ID Not provided. Running through all lab graders")
+
+                for grname in session[session_id]["Graders"]:
+                    graders_list.append(grname)
+            else:
+                graders_list = [grader_id]
+
+            points = 0
+            correct = 0
+            incorrect = 0
+            unanswered = 0
+            totalpoints = 0
+
+            for grader in graders_list:
+                checker = session[session_id]["Graders"][grader]["Checker_id"]
+                iscorrect = session[session_id]["Checkers"][f"{checker}_{session_id}"]["Correct"]
+                issubmited = session[session_id]["Checkers"][f"{checker}_{session_id}"]["Submitted"]
+                pointval = int(session[session_id]["Graders"][grader]["Point_value"])
+
+                if issubmited == True and iscorrect == True:
+                    points = points + pointval
+                    correct = correct + 1
+                    totalpoints = totalpoints + pointval
+                elif issubmited == True and iscorrect == False:
+                    points = points
+                    incorrect = incorrect + 1
+                    totalpoints = totalpoints + pointval
+                elif issubmited == False:
+                    points = points
+                    unanswered = unanswered + 1
+                    totalpoints = totalpoints + pointval
+        except Exception as e:
+            print({e})
+            return jsonify({"Error" : f"An Error has Occured {e}"}), 401
+        data = {
+            'session_id' : session_id,
+            'message' : f"Graders have been run. Here are the results",
+            'points_awarded': points,
+            'total_points': totalpoints,
+            'correct': correct,
+            'incorrect': incorrect,
+            'unanswered': unanswered,
+            'action_id' : 12
+        }
 
         file.close()
         return jsonify(data)
