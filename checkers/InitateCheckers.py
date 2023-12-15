@@ -1,7 +1,6 @@
 from checkers.LinuxFileChecker import *
 from checkers.PingVM import *
 
-
 def runchecker(checkertype, checkertask, checkercondition, machine, options):
     if checkertype == "ping":
         if checkertask == "icmpping":

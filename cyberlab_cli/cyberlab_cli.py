@@ -341,10 +341,31 @@ def gradesessiontest(session_id):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
+def answerquestiontest(session_id, question_number, answer):
+    daemonname = getdaemonname(session_id)
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
+    base_url = f"{API_URL}/answerquestion"
+    data = {
+        'session_id': session_id,
+        'connecton_key': CONNECTON_KEY,
+        'question_number': question_number,
+        'answer': answer
+    }
+    try:
+        response = requests.post(base_url, json=data)
+        if response.status_code == 200:
+            print(response.json())  # For JSON response
+        else:
+            print(f'Request failed with status code: {response.status_code}')
+
+    except requests.RequestException as e:
+        print(f'Request encountered an error: {e}')
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CyberLab Backend API CLI Program")
     parser.add_argument("--demosession", action="store", help="--demosession [course/lab] Selects a daemon, Creates a new session, Builds the session, renders the lab")
-    parser.add_argument("--shutsession", action="store", help="--shutsession [session_id] will check, grade, and destory the session")
+    parser.add_argument("--submit", action="store", help="--shutsession [session_id] will check, grade, and destory the session")
     parser.add_argument("--newsession", action="store", help="Selects a daemon and Creates a new session")
     parser.add_argument("--buildsession", action="store", help="--buildsesion [session-id] will build the session for the given session_id")
     parser.add_argument("--destorysession", action="store", help="--destorysession [session-id] will stop and delete the VMs, Guacamole connections/users and files for the session")
@@ -357,6 +378,7 @@ if __name__ == "__main__":
     parser.add_argument("--listlabs", action="store", help="--listlabs [daemon] will return a list of labs you can run on a daemon")
     parser.add_argument("--daemoninfo", action="store", help="--daemoninfo [daemon] will let you know the stats of a daemon")
     parser.add_argument("--selectdaemon", action="store", help="--selectdaemon [course/lab] selects the optimal daemon for a lab session")
+    parser.add_argument('--answerquestion', nargs='+', help="--answerquestion [session_id] [question_number] [answer] submits an text-question answer to a lab")
     args = parser.parse_args()
 
     if args.newsession:
@@ -393,18 +415,26 @@ if __name__ == "__main__":
         installedlabtests(args.listlabs)
     elif args.daemoninfo:
         daemonchecktest(args.daemoninfo)
+    elif args.answerquestion:
+        if len(args.answerquestion) >= 3:
+            session_id = args.answerquestion[0]
+            question_number = int(args.answerquestion[1])
+            answer = args.answerquestion[2]
+            answerquestiontest(session_id, question_number, answer)
+        else:
+            print('Please provide a session_id, question_number, and answer.')
     elif args.demosession:
         print(f"Building Session For {args.demosession}")
         session_id, daemonname = newsessiontest(args.demosession, "auto")
         buildsessiontest(session_id)
         renderlabtest(session_id)
         print(f"SessionID: {session_id} has been built and rendered")
-    elif args.shutsession:
-        print(f"Checking, Grading, and Destorying {args.shutsession}")
-        checksessiontest(args.shutsession)
-        gradesessiontest(args.shutsession)
+    elif args.submit:
+        print(f"Checking, Grading, and Destorying {args.submit}")
+        checksessiontest(args.submit)
+        gradesessiontest(args.submit)
         print("")
-        destorysessiontest(args.shutsession)
-        print(f"SessionID: {args.shutsession} has been graded and destoryed")
+        destorysessiontest(args.submit)
+        print(f"SessionID: {args.submit} has been graded and destoryed")
     else:
         print("Invaild Option")

@@ -70,8 +70,6 @@ def WriteSessionData(componet, indata, session_id):
             "Options": indata.get("Options"),
             "Machine": indata.get("Machine"),
             "Checker_Condition": indata.get("Checker_Condition"),
-            "Grade_Value": indata.get("Grade_Value"),
-            "RunAfterLab": indata.get("RunAfterLab"),
             "Submitted": "False",
             "Correct": "False"
         }
@@ -79,12 +77,14 @@ def WriteSessionData(componet, indata, session_id):
         data[session_id]['Graders'][f'{indata.get("Grader_id")}_{session_id}'] = {
             "Checker_id": indata.get("Checker_id"),
             "Point_value": indata.get("Point_value")
-
         }
 
     elif componet == "checkerupdate":
         data[session_id]['Checkers'][indata.get("Checker_id")]["Correct"] = indata.get("Correct")
         data[session_id]['Checkers'][indata.get("Checker_id")]["Submitted"] = indata.get("Submitted")
+
+    elif componet == "questionupdate":
+        data[session_id]["Questions"][f'{session_id}_{indata.get("question_number")}']["Submitted"] = indata.get("answer")
 
     elif componet == "metadata":
         data[session_id]['Metadata']['Ready'] = indata.get("Ready")

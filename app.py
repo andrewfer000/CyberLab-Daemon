@@ -122,9 +122,7 @@ def writecheckers(session_id):
         "Checker_Task" : checker_info['Checker_Task'],
         "Options" : checker_info['Options'],
         "Machine" : checker_info['Machine'],
-        "Checker_Condition" : checker_info['Checker_Condition'],
-        "Grade_Value" : checker_info['Grade_Value'],
-        "RunAfterLab" : checker_info['RunAfterLab']
+        "Checker_Condition" : checker_info['Checker_Condition']
         }
 
         WriteSessionData("checker", checker_data, session_id)
@@ -390,7 +388,6 @@ def PauseSession(session_id):
         with open(session_file, 'r') as file:
             session = json.load(file)
     except FileNotFoundError:
-        print(session_file)
         print(f"Session {session_id} not found. Are you sure that is correct?")
         return None
 
@@ -788,7 +785,6 @@ def runcheckerfunction():
                 print("Checker ID Not provided. Running through all lab checkers")
 
                 for chkname in session[session_id]["Checkers"]:
-                    print(chkname)
                     checkers_list.append(chkname)
             else:
                 checkers_list = [checker_id]
@@ -798,25 +794,46 @@ def runcheckerfunction():
                 checkertype = session[session_id]["Checkers"][checker]["Checker_Type"]
                 checkertask = session[session_id]["Checkers"][checker]["Checker_Task"]
                 checkercondition = session[session_id]["Checkers"][checker]["Checker_Condition"]
-                gradevalue = session[session_id]["Checkers"][checker]["Grade_Value"]
                 submited = session[session_id]["Checkers"][checker]["Submitted"]
                 machine = session[session_id]["Checkers"][checker]["Machine"]
                 options = session[session_id]["Checkers"][checker]["Options"]
 
-                machines = session[session_id]["VMinfo"]
-                machine_names = list(machines.keys())
-                for machine_name in machine_names:
-                    if machine_name == f"{machine}_{session_id}":
-                        machineip = session[session_id]["VMinfo"][f"{machine}_{session_id}"]["machine_data_ips"][0]
-                        answer = runchecker(checkertype, checkertask, checkercondition, machineip, options)
-                        checker_update_data= {
-                            "Checker_id": checker,
-                            "Correct": answer,
-                            "Submitted": True
-                        }
-                        WriteSessionData("checkerupdate", checker_update_data, session_id)
+
+                if checkertype == "question":
+                    correct = session[session_id]["Questions"][f'{session_id}_{checkertask}']["Answer"]
+                    submited = session[session_id]["Questions"][f'{session_id}_{checkertask}']["Submitted"]
+
+                    if correct == submited:
+                        answer = True
+                        answered = True
+                    elif submited == "null":
+                        answer = False
+                        answered = False
                     else:
-                        pass
+                        answer = False
+                        answered = True
+
+                    checker_update_data= {
+                        "Checker_id": checker,
+                        "Correct": answer,
+                        "Submitted": answered
+                    }
+                    WriteSessionData("checkerupdate", checker_update_data, session_id)
+                else:
+                    machines = session[session_id]["VMinfo"]
+                    machine_names = list(machines.keys())
+                    for machine_name in machine_names:
+                        if machine_name == f"{machine}_{session_id}":
+                            machineip = session[session_id]["VMinfo"][f"{machine}_{session_id}"]["machine_data_ips"][0]
+                            answer = runchecker(checkertype, checkertask, checkercondition, machineip, options)
+                            checker_update_data= {
+                                "Checker_id": checker,
+                                "Correct": answer,
+                                "Submitted": True
+                            }
+                            WriteSessionData("checkerupdate", checker_update_data, session_id)
+                        else:
+                            pass
         except Exception as e:
             print({e})
             return jsonify({"Error" : f"An Error has Occured {e}"}), 401
@@ -898,6 +915,25 @@ def rungradersfunction():
     else:
         return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
+@app.route('/answerquestion', methods=['POST'])
+def answerquestionfunction():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    question_number = inputdata.get('question_number', 'NOTPROVIDED')
+    answer = inputdata.get('answer', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        question_data = {
+            "question_number": question_number,
+            "answer": answer
+        }
+
+        WriteSessionData("questionupdate", question_data, session_id)
+        return jsonify({"Notice" : "Question has been answered"}), 200
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
+
 if __name__ == '__main__':
-    print("Using gunicorn")
+    print("Please use the gunicorn python script to launch the program.")
     #app.run(debug=False, host=LISTENIP, port=LISTENPORT)
