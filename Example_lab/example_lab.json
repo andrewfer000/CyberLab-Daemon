@@ -78,27 +78,49 @@
                 "Checker_Task": "icmpping",
                 "Checker_Condition": "online",
                 "Options" : [],
-                "Machine": "Machine1",
-                "Grade_Value": "20",
-                "RunAfterLab": "true"
+                "Machine": "Machine1"
             },
             "Checker2": {
                 "Checker_Type": "ping",
                 "Checker_Task": "icmpping",
                 "Checker_Condition": "offline",
                 "Options" : [],
-                "Machine": "Machine2",
-                "Grade_Value": "10",
-                "RunAfterLab": "true"
+                "Machine": "Machine2"
             },
             "Checker3": {
                 "Checker_Type": "ping",
                 "Checker_Task": "portcheck",
                 "Checker_Condition": "online",
                 "Options" : [80, 2],
-                "Machine": "Machine1",
-                "Grade_Value": "30",
-                "RunAfterLab": "true"
+                "Machine": "Machine1"
+            },
+            "Checker4": {
+                "Checker_Type": "question",
+                "Checker_Task": "1",
+                "Checker_Condition": "correct",
+                "Options" : [],
+                "Machine": "null"
+            },
+            "Checker5": {
+                "Checker_Type": "question",
+                "Checker_Task": "2",
+                "Checker_Condition": "correct",
+                "Options" : [],
+                "Machine": "null"
+            },
+            "Checker6": {
+                "Checker_Type": "question",
+                "Checker_Task": "3",
+                "Checker_Condition": "correct",
+                "Options" : [],
+                "Machine": "null"
+            },
+            "Checker7": {
+                "Checker_Type": "question",
+                "Checker_Task": "4",
+                "Checker_Condition": "correct",
+                "Options" : [],
+                "Machine": "null"
             }
         },
         "Graders" : {
@@ -113,6 +135,22 @@
             "Grader3" : {
                 "Checker_id": "Checker3",
                 "Point_value": 30
+            },
+            "Grader4" : {
+                "Checker_id": "Checker4",
+                "Point_value": 10
+            },
+            "Grader5" : {
+                "Checker_id": "Checker5",
+                "Point_value": 10
+            },
+            "Grader6" : {
+                "Checker_id": "Checker6",
+                "Point_value": 10
+            },
+            "Grader7" : {
+                "Checker_id": "Checker7",
+                "Point_value": 10
             }
         }
     }
