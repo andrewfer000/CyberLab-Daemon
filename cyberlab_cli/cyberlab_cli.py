@@ -361,6 +361,26 @@ def answerquestiontest(session_id, question_number, answer):
     except requests.RequestException as e:
         print(f'Request encountered an error: {e}')
 
+def machinecontroltest(session_id, machine, action):
+    daemonname = getdaemonname(session_id)
+    API_URL, CONNECTON_KEY = getdaemonvars(daemonname)
+    base_url = f"{API_URL}/machinecontrol"
+    data = {
+        'session_id': session_id,
+        'connecton_key': CONNECTON_KEY,
+        'machine': machine,
+        'action': action
+    }
+    try:
+        response = requests.post(base_url, json=data)
+        if response.status_code == 200:
+            print(response.json())  # For JSON response
+        else:
+            print(f'Request failed with status code: {response.status_code}')
+
+    except requests.RequestException as e:
+        print(f'Request encountered an error: {e}')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CyberLab Backend API CLI Program")
@@ -379,6 +399,7 @@ if __name__ == "__main__":
     parser.add_argument("--daemoninfo", action="store", help="--daemoninfo [daemon] will let you know the stats of a daemon")
     parser.add_argument("--selectdaemon", action="store", help="--selectdaemon [course/lab] selects the optimal daemon for a lab session")
     parser.add_argument('--answerquestion', nargs='+', help="--answerquestion [session_id] [question_number] [answer] submits an text-question answer to a lab")
+    parser.add_argument('--machinecontrol', nargs='+', help="--machinecontrol [session_id] [machine] [action] can control the power state of a machine.")
     args = parser.parse_args()
 
     if args.newsession:
@@ -423,6 +444,14 @@ if __name__ == "__main__":
             answerquestiontest(session_id, question_number, answer)
         else:
             print('Please provide a session_id, question_number, and answer.')
+    elif args.machinecontrol:
+        if len(args.machinecontrol) >= 3:
+            session_id = args.machinecontrol[0]
+            machine = args.machinecontrol[1]
+            action = args.machinecontrol[2]
+            machinecontroltest(session_id, machine, action)
+        else:
+            print('Please provide a session_id, machine, and action.')
     elif args.demosession:
         print(f"Building Session For {args.demosession}")
         session_id, daemonname = newsessiontest(args.demosession, "auto")

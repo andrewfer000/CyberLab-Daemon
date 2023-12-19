@@ -928,9 +928,30 @@ def answerquestionfunction():
             "question_number": question_number,
             "answer": answer
         }
-
         WriteSessionData("questionupdate", question_data, session_id)
         return jsonify({"Notice" : "Question has been answered"}), 200
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
+
+@app.route('/machinecontrol', methods=['POST'])
+def machinecontrolfunction():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    action = inputdata.get('action', 'NOTPROVIDED')
+    machine = inputdata.get('machine', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        machine_name = f"{machine}_{session_id}"
+        if action == "shutdown":
+            power_off_vm(machine_name)
+        elif action == "poweron":
+            power_on_vm(machine_name)
+        elif action == "forceoff":
+            force_off_vm(machine_name)
+        else:
+            return jsonify({"Error" : f"Action {action} not supported"}), 200
+        return jsonify({"Notice" : f"Action {action} on {machine} has been complete"}), 200
     else:
         return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
