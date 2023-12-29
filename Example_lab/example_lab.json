@@ -8,21 +8,21 @@
         },
         "Machines": {
             "Machine1": {
-                "Disks": [{"cdrom": "test.iso"}, {"lindisk": "myvm.qcow2"}],
+                "Disks": [{"cdrom": "test.iso"}, {"disk": "myvm.qcow2"}],
                 "OS": "Linux",
                 "CPUCores": "2",
                 "Memory": "2048",
                 "Network": [["virtio", "LabNetwork1"]]
             },
             "Machine2": {
-                "Disks": [{"cdrom": "test.iso"}, {"windisk": "winvm.qcow2"}],
+                "Disks": [{"cdrom": "test.iso"}, {"disk": "winvm.qcow2"}],
                 "OS": "Windows",
                 "CPUCores": "2",
                 "Memory": "4096",
                 "Network": [["e1000e", "LabNetwork1"]]
             },
             "Machine3": {
-                "Disks": [{"lindisk": "myvm.qcow2"}],
+                "Disks": [{"disk": "myvm.qcow2"}],
                 "OS": "Linux",
                 "CPUCores": "2",
                 "Memory": "2048",
@@ -46,7 +46,7 @@
                 "Subnet": "255.255.255.240",
                 "DHCPv4StartRange": "x.x.x.2",
                 "DHCPv4EndRange": "x.x.x.14",
-                "ipassignments": [["Machine3", "x.x.x.2"]]
+                "ipassignments": [["Machine3", "x.x.x.x"]]
             }
         },
         "Instructions": {
@@ -126,11 +126,11 @@
         "Graders" : {
             "Grader1" : {
                 "Checker_id": "Checker1",
-                "Point_value": 20
+                "Point_value": 10
             },
             "Grader2" : {
                 "Checker_id": "Checker2",
-                "Point_value": 10
+                "Point_value": 20
             },
             "Grader3" : {
                 "Checker_id": "Checker3",
