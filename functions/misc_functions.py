@@ -9,8 +9,11 @@ def generate_random_ip():
     x_parts = [random.randint(1, 255) for _ in range(3)]
     return f"10.{x_parts[1]}.{x_parts[2]}"
 
-def replace_ip_pattern(base_ip, machine_ip):
-    machine = int(machine_ip.split('.')[-1])
+def replace_ip_pattern(base_ip, machine_ip, rstart, rend):
+    machine = machine_ip.split('.')[-1]
+    if machine == "x":
+        machine = random.randint(int(rstart), int(rend))
+    machine = int(machine)
     full_ip = f"{base_ip}.{machine}"
     return full_ip
 

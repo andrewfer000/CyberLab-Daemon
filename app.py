@@ -147,13 +147,14 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
         br_name = f"virbr{random_number}"
         mac_addr = generate_random_mac()
         base_ip = generate_random_ip()
+        rstart = network_info.get("DHCPv4StartRange").split('.')[3]
+        rend = network_info.get("DHCPv4EndRange").split('.')[3]
 
         for assignment in network_info.get("ipassignments", []):
             net_machine_name = assignment[0]
             net_ip_address = assignment[1]
-
-            full_ip = replace_ip_pattern(base_ip, net_ip_address)
-
+            print(f"{rstart}, {rend}")
+            full_ip = replace_ip_pattern(base_ip, net_ip_address, rstart, rend)
             for machine_name, details in machines.items():
                 for network in details.get("Network", []):
                     vm_mac = generate_random_mac()
@@ -168,11 +169,8 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
                         dhcp_leases = dhcp_leases + dhcp_lease_string
                         machineip = {machine_name: full_ip}
                         machineips.append(machineip)
-                else:
-                    pass
 
-
-        ip_addr = replace_ip_pattern(base_ip, network_info.get("HostAddr"))
+        ip_addr = replace_ip_pattern(base_ip, network_info.get("HostAddr"), rstart, rend)
         sub_mask = network_info.get("Subnet")
 
         if network_info.get("Type") == "private":
@@ -196,8 +194,8 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
 
 
         network_name = f"{network_name}_{session_id}"
-        dhcp_start = replace_ip_pattern(base_ip, network_info.get("DHCPv4StartRange"))
-        dhcp_end = replace_ip_pattern(base_ip, network_info.get("DHCPv4EndRange"))
+        dhcp_start = replace_ip_pattern(base_ip, network_info.get("DHCPv4StartRange"), rstart, rend)
+        dhcp_end = replace_ip_pattern(base_ip, network_info.get("DHCPv4EndRange"), rstart, rend)
 
         net_xml = generate_net_config(network_name, dhcp_start, dhcp_end, dhcp_leases, bridge_conf)
         create_internal_network(net_xml)
@@ -226,6 +224,7 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
         VM_Disks = []
         diski = 0
         driveletter = 'a'
+        operatingsystem = details.get("OS")
         for disk in details.get("Disks", []):
             for disk_type, path in disk.items():
                 if disk_type == "cdrom":
@@ -252,7 +251,7 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
                     diski = diski + 1
                     driveletter = chr(ord(driveletter) + 1)
 
-                elif disk_type == "lindisk":
+                elif disk_type == "disk" and operatingsystem == "Linux":
                     source_file_path = f"{course_dir}/vm_images/{path}"
                     destination_file_path = f"sessions/{session_id}/disks/{session_id}_{machine_name}_{path}"
                     try:
@@ -269,7 +268,7 @@ def CreateVM(machines, networks, vm_vnc_ports, session_id, course_dir):
                     <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
                  </disk>
                 """
-                elif disk_type == "windisk":
+                elif disk_type == "disk" and operatingsystem == "Windows":
                     source_file_path = f"{course_dir}/vm_images/{path}"
                     destination_file_path = f"sessions/{session_id}/disks/{session_id}_{machine_name}_{path}"
                     try:
@@ -952,6 +951,18 @@ def machinecontrolfunction():
         else:
             return jsonify({"Error" : f"Action {action} not supported"}), 200
         return jsonify({"Notice" : f"Action {action} on {machine} has been complete"}), 200
+    else:
+        return jsonify({"Error" : "Backend Key Incorrect"}), 401
+
+@app.route('/sessionwatchdog', methods=['POST'])
+def sessionwatchfunction():
+    inputdata = request.get_json()
+    input_connecton_key = inputdata.get('connecton_key', 'NOTPROVIDED')
+    session_id = inputdata.get('session_id', 'NOTPROVIDED')
+    action = inputdata.get('action', 'NOTPROVIDED')
+    CONNECTION_KEY, LISTENIP, LISTENPORT = getdaemonvars()
+    if CONNECTION_KEY == input_connecton_key:
+        print("TODO")
     else:
         return jsonify({"Error" : "Backend Key Incorrect"}), 401
 
